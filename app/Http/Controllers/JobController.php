@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CompanyType;
 use App\Models\Job;
 use App\Models\Pais;
 use App\Models\Provincia;
@@ -22,9 +23,9 @@ class JobController extends Controller
         // Apply search filter
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -75,8 +76,14 @@ class JobController extends Controller
 
     public function create()
     {
-        $countries = Pais::all();
-        return view('jobs.create', compact('countries'));
+        $user = auth()->user();
+        $countryId = $user->paises_id ?? null;
+        if ($user->user_type !== 'user') {
+            return redirect()->route('jobs.index')->with('error', 'Only clients can post jobs.');
+        }
+        $provinces = $countryId ? Provincia::where('fk_pais', $countryId)->get() : collect();
+        $company_types = CompanyType::all();
+        return view('jobs.create', compact('provinces', 'company_types'));
     }
 
     public function store(Request $request)
@@ -85,20 +92,29 @@ class JobController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'budget' => 'required|numeric|min:0',
-            'paises_id' => 'required|exists:paises,id',
-            'provincia_id' => 'required|exists:provincia,id',
+            'provincia_id' => 'required|exists:provincias,id',
+            'company_types' => 'required|array',
+            'company_types.*' => 'exists:company_type,id',
         ]);
 
-        $job = auth()->user()->jobs()->create($validated);
+        $job = auth()->user()->jobs()->create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'budget' => $validated['budget'],
+            'provincia_id' => $validated['provincia_id'],
+            'company_types' => $validated['company_types'], // Store as JSON
+        ]);
 
         return redirect()->route('jobs.show', $job)
             ->with('success', 'Job posted successfully!');
     }
 
+    // In your controller
+    // In your controller
     public function show(Job $job)
     {
-        $job->load(['country', 'province', 'client']);
-        return view('jobs.show', compact('job'));
+        $companyTypes = CompanyType::whereIn('id', $job->company_types ?? [])->get();
+        return view('jobs.show', compact('job', 'companyTypes'));
     }
 
     public function edit(Job $job)
@@ -157,4 +173,4 @@ class JobController extends Controller
         // For now, just redirect to a payment page
         return redirect()->route('payment.job', $job);
     }
-} 
+}

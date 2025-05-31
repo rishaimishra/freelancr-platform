@@ -35,28 +35,17 @@
                         </div>
 
                         <!-- Budget -->
+                      <!-- Budget -->
                         <div class="mb-3">
-                            <label for="budget" class="form-label">Budget ($)</label>
-                            <input type="number" class="form-control @error('budget') is-invalid @enderror" 
-                                id="budget" name="budget" value="{{ old('budget') }}" min="0" step="0.01" required>
-                            @error('budget')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Country -->
-                        <div class="mb-3">
-                            <label for="paises_id" class="form-label">Country</label>
-                            <select class="form-select @error('paises_id') is-invalid @enderror" 
-                                id="paises_id" name="paises_id" required>
-                                <option value="">Select Country</option>
-                                @foreach($countries as $country)
-                                    <option value="{{ $country->id }}" {{ old('paises_id') == $country->id ? 'selected' : '' }}>
-                                        {{ $country->name }}
-                                    </option>
-                                @endforeach
+                            <label for="budget" class="form-label">Budget</label>
+                            <select class="form-select @error('budget') is-invalid @enderror" 
+                                id="budget" name="budget" required>
+                                <option value="0" {{ old('budget') == 0 ? 'selected' : '' }}>-- choose --</option>
+                                <option value="1" {{ old('budget') == 1 ? 'selected' : '' }}>Less than 5000 USD</option>
+                                <option value="2" {{ old('budget') == 2 ? 'selected' : '' }}>Between 5000 and 15000 USD</option>
+                                <option value="3" {{ old('budget') == 3 ? 'selected' : '' }}>More Than 15000 USD</option>
                             </select>
-                            @error('paises_id')
+                            @error('budget')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -67,8 +56,30 @@
                             <select class="form-select @error('provincia_id') is-invalid @enderror" 
                                 id="provincia_id" name="provincia_id" required>
                                 <option value="">Select Province</option>
+                                @foreach($provinces as $province)
+                                    <option value="{{ $province->id }}" {{ old('provincia_id') == $province->id ? 'selected' : '' }}>
+                                        {{ $province->nombre }}
+                                    </option>
+                                @endforeach
                             </select>
                             @error('provincia_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Company Types (Multi-select) -->
+                        <div class="mb-3">
+                            <label for="company_types" class="form-label">Company Types</label>
+                            <select class="form-select @error('company_types') is-invalid @enderror" 
+                                id="company_types" name="company_types[]" multiple="multiple" required>
+                                @foreach($company_types as $type)
+                                    <option value="{{ $type->id }}" 
+                                        {{ in_array($type->id, old('company_types', [])) ? 'selected' : '' }}>
+                                        {{ $type->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('company_types')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -87,32 +98,20 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Initialize Select2
-    $('#paises_id, #provincia_id').select2({
+    // Initialize Select2 for both selects
+    $('#provincia_id, #company_types').select2({
         theme: 'bootstrap-5'
     });
 
-    // Handle country change
-    $('#paises_id').change(function() {
-        const countryId = $(this).val();
-        const provinceSelect = $('#provincia_id');
-        
-        provinceSelect.empty().append('<option value="">Select Province</option>');
-        
-        if (countryId) {
-            $.get(`/provincias/${countryId}`, function(provinces) {
-                provinces.forEach(province => {
-                    provinceSelect.append(`<option value="${province.id}">${province.name}</option>`);
-                });
-            });
-        }
+    // For company types, you might want to add some configuration
+    $('#company_types').select2({
+        theme: 'bootstrap-5',
+        placeholder: "Select company types",
+        allowClear: true
     });
 
-    // If there's a selected country on page load, load its provinces
-    if ($('#paises_id').val()) {
-        $('#paises_id').trigger('change');
-    }
+    console.log('Form initialized');
 });
 </script>
 @endpush
-@endsection 
+@endsection

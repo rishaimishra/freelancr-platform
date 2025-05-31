@@ -14,8 +14,23 @@ class Job extends Model
         'status',
         'paises_id',
         'provincia_id',
-        'company_types_id',
+        'company_types', // Changed to store JSON array
         'client_id',
         'contractor_id'
     ];
+
+   protected $casts = [
+        'company_types' => 'array' // Auto-convert between JSON and array
+    ];
+    
+    public function getCompanyTypeNames()
+    {
+        if (empty($this->company_types)) {
+            return [];
+        }
+        
+        return CompanyType::whereIn('id', $this->company_types)
+                        ->pluck('name')
+                        ->toArray();
+    }
 }
