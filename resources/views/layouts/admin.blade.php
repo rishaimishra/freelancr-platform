@@ -62,28 +62,28 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" 
-                               href="{{ route('admin.users.index') }}">
+                            <a class="nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}" 
+                               href="{{ route('admin.users') }}">
                                 <i class="fas fa-users me-2"></i> Users
                             </a>
                         </li>
                         <li class="nav-item">
-                            {{-- <a class="nav-link {{ request()->routeIs('admin.jobs.*') ? 'active' : '' }}" 
-                               href="{{ route('admin.jobs.index') }}">
+                            <a class="nav-link {{ request()->routeIs('admin.jobs') ? 'active' : '' }}" 
+                               href="{{ route('admin.jobs') }}">
                                 <i class="fas fa-briefcase me-2"></i> Jobs
-                            </a> --}}
+                            </a>
                         </li>
                         <li class="nav-item">
-                            {{-- <a class="nav-link {{ request()->routeIs('admin.applications.*') ? 'active' : '' }}" 
-                               href="{{ route('admin.applications.index') }}">
+                            <a class="nav-link {{ request()->routeIs('admin.applications') ? 'active' : '' }}" 
+                               href="{{ route('admin.applications') }}">
                                 <i class="fas fa-file-alt me-2"></i> Applications
-                            </a> --}}
+                            </a>
                         </li>
                         <li class="nav-item">
-                            {{-- <a class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}" 
-                               href="{{ route('admin.settings.index') }}">
+                            <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}" 
+                               href="{{ route('admin.settings') }}">
                                 <i class="fas fa-cog me-2"></i> Settings
-                            </a> --}}
+                            </a>
                         </li>
                     </ul>
                 </div>

@@ -94,18 +94,73 @@ class AdminController extends Controller
         ];
     }
 
-    public function users()
+    public function users(Request $request)
     {
-        $users = User::withCount(['jobs', 'applications'])
-            ->latest()
-            ->paginate(10);
+        $query = User::withCount(['jobs']);
+
+        // Search
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by type
+        if ($request->has('type') && $request->get('type') !== '') {
+            $query->where('user_type', $request->get('type'));
+        }
+
+        // Sort
+        switch ($request->get('sort', 'latest')) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'name':
+                $query->orderBy('name');
+                break;
+            default:
+                $query->latest();
+                break;
+        }
+
+        $users = $query->paginate(10)->withQueryString();
+
         return view('admin.users.index', compact('users'));
+    }
+
+    public function updateUser(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'user_type' => 'required|in:user,contractor'
+        ]);
+
+        $user->update($validated);
+
+        return redirect()->route('admin.users')
+            ->with('success', 'User updated successfully.');
+    }
+
+    public function destroyUser(User $user)
+    {
+        // Prevent deleting the last admin
+        if ($user->user_type === 'admin' && User::where('user_type', 'admin')->count() <= 1) {
+            return redirect()->route('admin.users')
+                ->with('error', 'Cannot delete the last admin user.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('admin.users')
+            ->with('success', 'User deleted successfully.');
     }
 
     public function jobs()
     {
-        $jobs = Job::with(['client', 'applications'])
-            ->withCount('applications')
+        $jobs = Job::with(['client'])
             ->latest()
             ->paginate(10);
         return view('admin.jobs.index', compact('jobs'));
