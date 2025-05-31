@@ -48,7 +48,10 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'provincia_id' => 'array',
-        'company_types_id' => 'array',
     ];
+
+    public function jobs()
+    {
+        return $this->hasMany(Job::class, 'client_id');
+    }
 }
