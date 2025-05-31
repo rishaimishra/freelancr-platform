@@ -84,7 +84,7 @@ class JobController extends Controller
 
     public function create()
     {
-        if(auth()->user()->user_type !== 'user') {
+        if (auth()->user()->user_type !== 'user') {
             return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
         }
         $user = auth()->user();
@@ -99,7 +99,7 @@ class JobController extends Controller
 
     public function store(Request $request)
     {
-        if(auth()->user()->user_type !== 'user') {
+        if (auth()->user()->user_type !== 'user') {
             return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
         }
         $validated = $request->validate([
@@ -133,7 +133,7 @@ class JobController extends Controller
 
     public function edit(Job $job)
     {
-        if(auth()->user()->user_type !== 'user') {
+        if (auth()->user()->user_type !== 'user') {
             return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
         }
         // $this->authorize('update', $job);
@@ -146,7 +146,7 @@ class JobController extends Controller
 
     public function update(Request $request, Job $job)
     {
-       if(auth()->user()->user_type !== 'user') {
+        if (auth()->user()->user_type !== 'user') {
             return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
         }
 
@@ -179,7 +179,7 @@ class JobController extends Controller
 
     public function destroy(Job $job)
     {
-       if(auth()->user()->user_type !== 'user') {
+        if (auth()->user()->user_type !== 'user') {
             return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
         }
         $job->delete();
@@ -207,5 +207,23 @@ class JobController extends Controller
         // TODO: Implement payment processing
         // For now, just redirect to a payment page
         return redirect()->route('payment.job', $job);
+    }
+
+    public function adminIndex()
+    {
+        $jobs = Job::with('user')->latest()->paginate(10);
+        return view('admin.jobs.index', compact('jobs'));
+    }
+
+    public function adminShow(Job $job)
+    {
+        return view('admin.jobs.show', compact('job'));
+    }
+
+    public function adminDestroy(Job $job)
+    {
+        $job->delete();
+        return redirect()->route('admin.jobs.index')
+            ->with('success', 'Job deleted successfully');
     }
 }

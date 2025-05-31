@@ -5,6 +5,8 @@ use App\Http\Controllers\ProvinciaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Home Routes
@@ -35,7 +37,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Job Management Routes (for clients)
-   Route::middleware(['role:user'])->group(function () {
+    Route::middleware(['role:user'])->group(function () {
         Route::get('/jobs-create', [JobController::class, 'create'])->name('jobs.create');
         Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
         Route::get('/jobs/{job}/edit', [JobController::class, 'edit'])->name('jobs.edit');
@@ -47,5 +49,29 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:contractor'])->group(function () {
         Route::post('/jobs/{job}/apply', [JobController::class, 'apply'])->name('jobs.apply');
     });
+
+
+    
 });
 
+// Admin Login
+    Route::get('/admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
+    Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
+
+    // Admin Routes
+    Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+        // Admin Dashboard
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+
+        // User Management
+        Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('admin.users.show');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+
+        // Job Management
+        Route::get('/jobs', [JobController::class, 'adminIndex'])->name('admin.jobs.index');
+        Route::get('/jobs/{job}', [JobController::class, 'adminShow'])->name('admin.jobs.show');
+        Route::delete('/jobs/{job}', [JobController::class, 'adminDestroy'])->name('admin.jobs.destroy');
+    });
