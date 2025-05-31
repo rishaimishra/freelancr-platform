@@ -77,9 +77,10 @@ class JobController extends Controller
         }
 
         $jobs = $query->paginate(10)->withQueryString();
+         $jobsData = Job::where('status', 'hired')->get();
         $provinces = $request->has('paises_id') ? Provincia::where('paises_id', $request->paises_id)->get() : collect();
 
-        return view('jobs.index', compact('jobs', 'provinces'));
+        return view('jobs.index', compact('jobs', 'provinces', 'jobsData'));
     }
 
     public function create()

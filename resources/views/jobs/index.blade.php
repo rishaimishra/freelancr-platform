@@ -83,7 +83,7 @@
             <div class="col-lg-9">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>Available Jobs</h2>
-                 
+
                     @auth
                         @if (auth()->user()->user_type === 'user')
                             <a href="{{ route('jobs.create') }}" class="btn btn-primary">
@@ -93,74 +93,132 @@
                     @endauth
                 </div>
 
-                @if ($jobs->isEmpty())
-                    <div class="alert alert-info">
-                        No jobs found matching your criteria.
-                    </div>
-                @else
-                    <div class="row">
-                        @foreach ($jobs as $job)
-                            <div class="col-md-6 mb-4">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h5 class="card-title mb-0">
-                                                <a href="{{ route('jobs.show', $job) }}" class="text-decoration-none">
-                                                    {{ $job->title }}
-                                                </a>
-                                            </h5>
-                                            <span
-                                                class="badge bg-{{ $job->status === 'open' ? 'success' : ($job->status === 'hired' ? 'primary' : 'secondary') }}">
-                                                {{ ucfirst($job->status) }}
-                                            </span>
-                                        </div>
-
-                                        <p class="card-text text-muted small mb-2">
-                                            Posted {{ $job->created_at->diffForHumans() }}
-                                        </p>
-
-                                        <p class="card-text mb-3">
-                                            {{ Str::limit($job->description, 150) }}
-                                        </p>
-
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <span class="badge bg-info me-2">
-                                                    <i class="fas fa-money-bill-wave"></i>
-                                                    @switch($job->budget)
-                                                        @case(1)
-                                                            Under $5,000
-                                                        @break
-
-                                                        @case(2)
-                                                            $5,000 - $15,000
-                                                        @break
-
-                                                        @case(3)
-                                                            $15,000+
-                                                        @break
-
-                                                        @default
-                                                            Budget not specified
-                                                    @endswitch
+                @if (auth()->user()->user_type === 'user')
+                    @if ($jobs->isEmpty())
+                        <div class="alert alert-info">
+                            No jobs found matching your criteria.
+                        </div>
+                    @else
+                        <div class="row">
+                            @foreach ($jobs as $job)
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h5 class="card-title mb-0">
+                                                    <a href="{{ route('jobs.show', $job) }}" class="text-decoration-none">
+                                                        {{ $job->title }}
+                                                    </a>
+                                                </h5>
+                                                <span
+                                                    class="badge bg-{{ $job->status === 'open' ? 'success' : ($job->status === 'hired' ? 'primary' : 'secondary') }}">
+                                                    {{ ucfirst($job->status) }}
                                                 </span>
-
                                             </div>
-                                            <a href="{{ route('jobs.edit', $job) }}"
-                                                class="btn btn-outline-primary btn-sm">
-                                                View Details
-                                            </a>
+
+                                            <p class="card-text text-muted small mb-2">
+                                                Posted {{ $job->created_at->diffForHumans() }}
+                                            </p>
+
+                                            <p class="card-text mb-3">
+                                                {{ Str::limit($job->description, 150) }}
+                                            </p>
+
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="badge bg-info me-2">
+                                                        <i class="fas fa-money-bill-wave"></i>
+                                                        @switch($job->budget)
+                                                            @case(1)
+                                                                Under $5,000
+                                                            @break
+
+                                                            @case(2)
+                                                                $5,000 - $15,000
+                                                            @break
+
+                                                            @case(3)
+                                                                $15,000+
+                                                            @break
+
+                                                            @default
+                                                                Budget not specified
+                                                        @endswitch
+                                                    </span>
+
+                                                </div>
+                                                <a href="{{ route('jobs.edit', $job) }}"
+                                                    class="btn btn-outline-primary btn-sm">
+                                                    View Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-center mt-4">
+                            {{ $jobs->links() }}
+                        </div>
+                    @endif
+                @else
+                    @php
+                        $userProvinciaIdRaw = auth()->user()->provincia_id;
+
+                        // First decode gives string like: '["4","5"]'
+                        $decodedOnce = json_decode($userProvinciaIdRaw, true);
+
+                        // Second decode gives the actual array
+                        $userProvinces = json_decode($decodedOnce, true);
+
+                        if (!is_array($userProvinces)) {
+                            $userProvinces = [];
+                        }
+                    @endphp
+
+
+
+                    @foreach ($jobsData as $job)
+                        @if (in_array((string) $job->provincia_id, $userProvinces))
+                            <!-- Display matching job -->
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="card-title">{{ $job->title }}</h5>
+                                            <p class="card-text text-muted">
+                                                Posted {{ $job->created_at->diffForHumans() }}
+                                            </p>
+                                        </div>
+                                        <div class="text-end">
+                                            <span
+                                                class="badge bg-{{ $job->status === 'open' ? 'success' : ($job->status === 'hired' ? 'primary' : 'secondary') }} mb-2">
+                                                {{-- {{ ucfirst($job->status) }} --}}
+                                                Hiring
+                                            </span>
+                                            <p class="mb-0">Budget: ${{ number_format($job->budget, 2) }}</p>
+                                        </div>
+                                    </div>
+
+                                    <p class="card-text">{{ Str::limit($job->description, 200) }}</p>
+
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <div>
+                                            <span class="badge bg-success">{{ $job->provincia_id ? "Latest":"CLOSED" }}</span>
+                                        </div>
+                                        <div>
+                                            <a href="{{ route('jobs.show', $job) }}"
+                                                class="btn btn-outline-primary btn-sm">View Details</a>
+                                            
+                                           
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="d-flex justify-content-center mt-4">
-                        {{ $jobs->links() }}
-                    </div>
+                        @endif
+                    @endforeach
                 @endif
             </div>
         </div>

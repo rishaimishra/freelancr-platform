@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Job;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -45,9 +46,10 @@ class ProfileController extends Controller
         } else {
             $query->latest();
         }
+          $jobsData = Job::where('status', 'hired')->get();
 
         $jobs = $query->paginate(10)->withQueryString();
-        return view('profile.index', compact('jobs'));
+        return view('profile.index', compact('jobs','jobsData'));
     }
 
     public function edit()
