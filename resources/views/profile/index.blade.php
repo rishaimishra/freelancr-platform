@@ -166,8 +166,8 @@
                                             <span class="badge bg-success">{{ $job->provincia_id ? "Latest":"CLOSED" }}</span>
                                         </div>
                                         <div>
-                                            <a href="{{ route('jobs.show', $job) }}"
-                                                class="btn btn-outline-primary btn-sm">View Details</a>
+                                            <a href="{{ route('freelance.jobs.edit', $job) }}"
+                                                class="btn btn-outline-primary btn-sm">View Job Details</a>
                                           
                                           
                                         </div>

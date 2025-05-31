@@ -36,6 +36,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
+     Route::get('/freelancer-jobs/{job}/edit', [JobController::class, 'freelanceredit'])->name('freelance.jobs.edit');
+
     // Job Management Routes (for clients)
     Route::middleware(['role:user'])->group(function () {
         Route::get('/jobs-create', [JobController::class, 'create'])->name('jobs.create');

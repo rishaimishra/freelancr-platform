@@ -144,6 +144,18 @@ class JobController extends Controller
 
         return view('jobs.edit', compact('job', 'provinces', 'current_province', 'company_types'));
     }
+    public function freelanceredit(Job $job)
+    {
+        if (auth()->user()->user_type !== 'contractor') {
+            return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
+        }
+        // $this->authorize('update', $job);
+        $provinces = Provincia::all();
+        $current_province = Provincia::find($job->provincia_id); // Get current province
+        $company_types = CompanyType::all();
+
+        return view('contractorjobs.edit', compact('job', 'provinces', 'current_province', 'company_types'));
+    }
 
     public function update(Request $request, Job $job)
     {
