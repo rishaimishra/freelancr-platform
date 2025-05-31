@@ -78,13 +78,21 @@ Route::middleware(['auth'])->group(function () {
 
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
     Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
     Route::get('/jobs', [AdminController::class, 'jobs'])->name('jobs');
+
+     Route::get('/jobs/{job}/edit', [AdminController::class, 'editJob'])->name('jobs.edit');
+
+    Route::put('/jobs/{job}', [AdminController::class, 'updateJob'])->name('jobs.update');
+    Route::put('/jobs/{job}/status', [AdminController::class, 'updateJobStatus'])->name('jobs.update.status');
+    Route::delete('/jobs/{job}', [AdminController::class, 'destroyJob'])->name('jobs.destroy');
     Route::get('/applications', [AdminController::class, 'applications'])->name('applications');
     Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
     Route::get('/profile', [AdminController::class, 'profile'])->name('profile');
     Route::get('/stats/users', [AdminController::class, 'getUserStats'])->name('stats.users');
+
+    Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
 });

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CompanyType;
+use App\Models\Provincia;
 use App\Models\User;
 use App\Models\Job;
 use App\Models\JobApplication;
@@ -158,12 +160,111 @@ class AdminController extends Controller
             ->with('success', 'User deleted successfully.');
     }
 
-    public function jobs()
+    public function jobs(Request $request)
     {
-        $jobs = Job::with(['client'])
-            ->latest()
-            ->paginate(10);
+        $query = Job::with(['client', 'provincia']);
+
+        // Search
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->get('status') !== '') {
+            $query->where('status', $request->get('status'));
+        }
+
+        // Sort
+        switch ($request->get('sort', 'latest')) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'budget_high':
+                $query->orderBy('budget', 'desc');
+                break;
+            case 'budget_low':
+                $query->orderBy('budget', 'asc');
+                break;
+            default:
+                $query->latest();
+                break;
+        }
+
+        $jobs = $query->paginate(10)->withQueryString();
+
         return view('admin.jobs.index', compact('jobs'));
+    }
+
+     public function editJob(Job $job)
+    {
+        if (auth()->user()->user_type !== 'admin') {
+            return redirect()->route('admin.jobs')->with('error', 'Only clients can update jobs.');
+        }
+        // $this->authorize('update', $job);
+        $provinces = Provincia::all();
+        $current_province = Provincia::find($job->provincia_id); // Get current province
+        $company_types = CompanyType::all();
+
+        return view('admin.jobs.edit', compact('job', 'provinces', 'current_province', 'company_types'));
+    }
+
+    public function updateJob(Request $request, Job $job)
+    {
+         if (auth()->user()->user_type !== 'admin') {
+            return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'budget' => 'required|integer|between:0,3',  // Changed to include 0 (-- choose -- option)
+            'provincia_id' => 'required|exists:provincias,id',
+            'company_types' => 'required|array',
+            'company_types.*' => 'exists:company_type,id',  // Fixed table name (was company_type)
+        ]);
+
+        // Update the job with validated data
+        $job->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'budget' => $validated['budget'],
+            'provincia_id' => $validated['provincia_id'],
+            'company_types' => $validated['company_types'],
+        ]);
+
+        // If using many-to-many relationship for company types, sync them
+        if (method_exists($job, 'companyTypes')) {
+            $job->companyTypes()->sync($validated['company_types']);
+        }
+
+        return redirect()->route('admin.jobs')
+            ->with('success', 'Job updated successfully.');
+    }
+
+     public function updateJobStatus(Request $request, Job $job)
+    {
+        // dd($request->all());
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'status' => 'required|in:open,hired,closed'
+        ]);
+
+        $job->update($validated);
+
+        return redirect()->route('admin.jobs')
+            ->with('success', 'Job updated successfully.');
+    }
+
+    public function destroyJob(Job $job)
+    {
+        $job->delete();
+
+        return redirect()->route('admin.jobs')
+            ->with('success', 'Job deleted successfully.');
     }
 
     public function applications()
@@ -182,5 +283,13 @@ class AdminController extends Controller
     public function profile()
     {
         return view('admin.profile');
+    }
+
+     public function logout(Request $request)
+    {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/');
     }
 }

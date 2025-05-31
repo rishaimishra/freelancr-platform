@@ -28,6 +28,11 @@ class Job extends Model
         return $this->belongsTo(User::class, 'client_id');
     }
 
+    public function provincia()
+    {
+        return $this->belongsTo(Provincia::class, 'provincia_id');
+    }
+
     public function getCompanyTypeNames()
     {
         if (empty($this->company_types)) {
