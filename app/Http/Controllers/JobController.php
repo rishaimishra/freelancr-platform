@@ -12,7 +12,8 @@ class JobController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Job::with(['country', 'province']);
+        $query = Job::query()
+            ->where('status', 'open'); // Show only open jobs
 
         // If user is a contractor, show only jobs in their area
         if (auth()->check() && auth()->user()->user_type === 'contractor') {
@@ -29,22 +30,30 @@ class JobController extends Controller
             });
         }
 
-        // Apply budget range filter
-        if ($request->has('min_budget')) {
-            $query->where('budget', '>=', $request->min_budget);
-        }
-        if ($request->has('max_budget')) {
-            $query->where('budget', '<=', $request->max_budget);
-        }
+        // Apply budget range filter (updated for 1,2,3 values)
+        if ($request->has('min_budget') || $request->has('max_budget')) {
+            $query->where(function ($q) use ($request) {
+                $min = $request->min_budget ? (int) $request->min_budget : 0;
+                $max = $request->max_budget ? (int) $request->max_budget : PHP_INT_MAX;
 
-        // Apply country filter
-        if ($request->has('paises_id') && $request->paises_id !== '') {
-            $query->where('paises_id', $request->paises_id);
-        }
+                // Convert dollar amounts to budget ranges (1,2,3)
+                $validRanges = [];
 
-        // Apply province filter
-        if ($request->has('provincia_id') && $request->provincia_id !== '') {
-            $query->where('provincia_id', $request->provincia_id);
+                // Check which ranges match the filter criteria
+                if ($min <= 5000 && $max >= 0) {
+                    $validRanges[] = 1; // Under $5,000
+                }
+                if ($min <= 15000 && $max >= 5000) {
+                    $validRanges[] = 2; // $5,000-$15,000
+                }
+                if ($min >= 15000 || $max >= 15000) {
+                    $validRanges[] = 3; // $15,000+
+                }
+
+                if (!empty($validRanges)) {
+                    $q->whereIn('budget', $validRanges);
+                }
+            });
         }
 
         // Apply sorting
@@ -68,14 +77,16 @@ class JobController extends Controller
         }
 
         $jobs = $query->paginate(10)->withQueryString();
-        $countries = Pais::all();
         $provinces = $request->has('paises_id') ? Provincia::where('paises_id', $request->paises_id)->get() : collect();
 
-        return view('jobs.index', compact('jobs', 'countries', 'provinces'));
+        return view('jobs.index', compact('jobs', 'provinces'));
     }
 
     public function create()
     {
+        if(auth()->user()->user_type !== 'user') {
+            return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
+        }
         $user = auth()->user();
         $countryId = $user->paises_id ?? null;
         if ($user->user_type !== 'user') {
@@ -88,6 +99,9 @@ class JobController extends Controller
 
     public function store(Request $request)
     {
+        if(auth()->user()->user_type !== 'user') {
+            return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
+        }
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -105,7 +119,7 @@ class JobController extends Controller
             'company_types' => $validated['company_types'], // Store as JSON
         ]);
 
-        return redirect()->route('jobs.show', $job)
+        return redirect()->route('jobs.index', $job)
             ->with('success', 'Job posted successfully!');
     }
 
@@ -119,34 +133,55 @@ class JobController extends Controller
 
     public function edit(Job $job)
     {
-        $this->authorize('update', $job);
-        $countries = Pais::all();
-        $provinces = Provincia::where('paises_id', $job->paises_id)->get();
-        return view('jobs.edit', compact('job', 'countries', 'provinces'));
+        if(auth()->user()->user_type !== 'user') {
+            return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
+        }
+        // $this->authorize('update', $job);
+        $provinces = Provincia::all();
+        $current_province = Provincia::find($job->provincia_id); // Get current province
+        $company_types = CompanyType::all();
+
+        return view('jobs.edit', compact('job', 'provinces', 'current_province', 'company_types'));
     }
 
     public function update(Request $request, Job $job)
     {
-        $this->authorize('update', $job);
+       if(auth()->user()->user_type !== 'user') {
+            return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
+        }
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'budget' => 'required|numeric|min:0',
-            'paises_id' => 'required|exists:paises,id',
-            'provincia_id' => 'required|exists:provincia,id',
-            'status' => 'required|in:open,closed,hired',
+            'budget' => 'required|integer|between:0,3',  // Changed to include 0 (-- choose -- option)
+            'provincia_id' => 'required|exists:provincias,id',
+            'company_types' => 'required|array',
+            'company_types.*' => 'exists:company_type,id',  // Fixed table name (was company_type)
         ]);
 
-        $job->update($validated);
+        // Update the job with validated data
+        $job->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'budget' => $validated['budget'],
+            'provincia_id' => $validated['provincia_id'],
+            'company_types' => $validated['company_types'],
+        ]);
 
-        return redirect()->route('jobs.show', $job)
+        // If using many-to-many relationship for company types, sync them
+        if (method_exists($job, 'companyTypes')) {
+            $job->companyTypes()->sync($validated['company_types']);
+        }
+
+        return redirect()->route('jobs.index')
             ->with('success', 'Job updated successfully!');
     }
 
     public function destroy(Job $job)
     {
-        $this->authorize('delete', $job);
+       if(auth()->user()->user_type !== 'user') {
+            return redirect()->route('jobs.index')->with('error', 'Only clients can update jobs.');
+        }
         $job->delete();
         return redirect()->route('jobs.index')
             ->with('success', 'Job deleted successfully!');

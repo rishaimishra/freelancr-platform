@@ -49,7 +49,13 @@
         <div class="col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>My Posted Jobs</h2>
-                <a href="{{ route('jobs.create') }}" class="btn btn-primary">Post New Job</a>
+                    @auth
+                        @if (auth()->user()->user_type === 'user')
+                            <a href="{{ route('jobs.create') }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Post a Job
+                            </a>
+                        @endif
+                    @endauth
             </div>
 
             @if(isset($jobs) && $jobs->count() > 0)
