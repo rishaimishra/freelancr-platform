@@ -59,19 +59,30 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
 
     // Admin Routes
-    Route::middleware(['role:admin'])->prefix('admin')->group(function () {
-        // Admin Dashboard
-        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    // Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+    //     // Admin Dashboard
+    //     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
-        // User Management
-        Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');
-        Route::get('/users/{user}', [UserController::class, 'show'])->name('admin.users.show');
-        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
-        Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
-        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+    //     // User Management
+    //     Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');
+    //     Route::get('/users/{user}', [UserController::class, 'show'])->name('admin.users.show');
+    //     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
+    //     Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+    //     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
 
-        // Job Management
-        Route::get('/jobs', [JobController::class, 'adminIndex'])->name('admin.jobs.index');
-        Route::get('/jobs/{job}', [JobController::class, 'adminShow'])->name('admin.jobs.show');
-        Route::delete('/jobs/{job}', [JobController::class, 'adminDestroy'])->name('admin.jobs.destroy');
-    });
+    //     // Job Management
+    //     Route::get('/jobs', [JobController::class, 'adminIndex'])->name('admin.jobs.index');
+    //     Route::get('/jobs/{job}', [JobController::class, 'adminShow'])->name('admin.jobs.show');
+    //     Route::delete('/jobs/{job}', [JobController::class, 'adminDestroy'])->name('admin.jobs.destroy');
+    // });
+
+// Admin routes
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::get('/jobs', [AdminController::class, 'jobs'])->name('jobs');
+    Route::get('/applications', [AdminController::class, 'applications'])->name('applications');
+    Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
+    Route::get('/profile', [AdminController::class, 'profile'])->name('profile');
+    Route::get('/stats/users', [AdminController::class, 'getUserStats'])->name('stats.users');
+});
