@@ -11,7 +11,6 @@
                         <h4 class="mb-0">View Job</h4>
                     </div>
                     <div class="card-body">
-                        <form>
                             <!-- Title -->
                             <div class="mb-3">
                                 <label for="title" class="form-label">Job Title</label>
@@ -67,11 +66,10 @@
                             </div>
 
                              <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary">Apply Job</button>
+                                 <a href="{{ route('jobs.apply',$job->id) }}" class="btn btn-primary">Apply Job</a>
                                 <a href="{{ route('jobs.apply',$job->id) }}" class="btn btn-outline-secondary">Cancel</a>
                             </div>
 
-                        </form>
                     </div>
                 </div>
             </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CompanyType;
 use App\Models\Job;
 use App\Models\Pais;
+use App\Models\Payment;
 use App\Models\Provincia;
 use Illuminate\Http\Request;
 
@@ -77,7 +78,7 @@ class JobController extends Controller
         }
 
         $jobs = $query->paginate(10)->withQueryString();
-         $jobsData = Job::where('status', 'hired')->get();
+        $jobsData = Job::where('status', 'hired')->get();
         $provinces = $request->has('paises_id') ? Provincia::where('paises_id', $request->paises_id)->get() : collect();
 
         return view('jobs.index', compact('jobs', 'provinces', 'jobsData'));
@@ -200,26 +201,39 @@ class JobController extends Controller
             ->with('success', 'Job deleted successfully!');
     }
 
-    public function apply(Job $job)
+    public function apply($id)
     {
         // Check if user is a contractor
         if (auth()->user()->user_type !== 'contractor') {
             return redirect()->back()->with('error', 'Only contractors can apply for jobs.');
         }
+        $job = Job::findOrFail($id);
 
-        // Check if job is in contractor's area
-        if (auth()->user()->provincia_id !== $job->provincia_id) {
-            return redirect()->back()->with('error', 'This job is not available in your area.');
+
+        if (!$job) {
+            return redirect()->back()->with('error', 'The job does not exist.');
+        }
+        // Check if the job is open
+        if ($job->status !== 'hired') {
+            return redirect()->back()->with('error', 'This job is no longer available.');
         }
 
-        // Check if job is open
-        if ($job->status !== 'open') {
-            return redirect()->back()->with('error', 'This job is no longer accepting applications.');
-        }
+        // Check if the contractor has already applied
+        // Create a payment record
+        $payment = Payment::create([
+            'user_id' => auth()->id(),
+            'job_id' => (int) $job->id,
+            'amount' => 50.00,
+            'payment_method' => 'pending',
+            'status' => 'pending',
+        ]);
 
-        // TODO: Implement payment processing
-        // For now, just redirect to a payment page
-        return redirect()->route('payment.job', $job);
+        // Redirect to payment option selection
+        return view('payments.options', [
+            'job' => $job,
+            'payment' => $payment,
+        ]);
+
     }
 
     public function adminIndex()

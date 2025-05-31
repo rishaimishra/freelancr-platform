@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CecaPaymentController;
+use App\Http\Controllers\PayPalPaymentController;
 use App\Http\Controllers\ProvinciaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
@@ -36,7 +38,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-     Route::get('/freelancer-jobs/{job}/edit', [JobController::class, 'freelanceredit'])->name('freelance.jobs.edit');
+    Route::get('/freelancer-jobs/{job}/edit', [JobController::class, 'freelanceredit'])->name('freelance.jobs.edit');
 
     // Job Management Routes (for clients)
     Route::middleware(['role:user'])->group(function () {
@@ -49,34 +51,56 @@ Route::middleware(['auth'])->group(function () {
 
     // Job Application Routes (for contractors)
     Route::middleware(['role:contractor'])->group(function () {
-        Route::post('/jobs/{job}/apply', [JobController::class, 'apply'])->name('jobs.apply');
+        Route::get('/jobs/{job}/apply', [JobController::class, 'apply'])->name('jobs.apply');
+
     });
 
 
-    
+
 });
 
+// Payment routes
+Route::get('/payment/paypal/{payment}', [PayPalPaymentController::class, 'handlePayment'])
+    ->name('payment.paypal');
+Route::get('/payment/success/{payment}', [PayPalPaymentController::class, 'paymentSuccess'])
+    ->name('payment.success');
+Route::get('/payment/cancel/{payment}', [PayPalPaymentController::class, 'paymentCancel'])
+    ->name('payment.cancel');
+Route::get('/payment/invoice/{payment}', [PayPalPaymentController::class, 'downloadInvoice'])
+    ->name('payment.invoice');
+
+// CECA Payment Routes
+Route::get('/jobs/{job}/pay/credit-card', [CecaPaymentController::class, 'showPaymentForm'])
+    ->name('payment.ceca.form');
+Route::post('/payment/ceca/success/{payment}', [CecaPaymentController::class, 'handleSuccess'])
+    ->name('payment.ceca.success');
+Route::post('/payment/ceca/failed/{payment}', [CecaPaymentController::class, 'handleFailure'])
+    ->name('payment.ceca.failed');
+
+Route::post('/generate-hash', [CecaPaymentController::class, 'generateHash'])->name('generate.hash');
+
+
 // Admin Login
-    Route::get('/admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
-    Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
+Route::get('/admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
+Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
 
-    // Admin Routes
-    // Route::middleware(['role:admin'])->prefix('admin')->group(function () {
-    //     // Admin Dashboard
-    //     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+// Admin Routes
+// Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+//     // Admin Dashboard
+//     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
-    //     // User Management
-    //     Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');
-    //     Route::get('/users/{user}', [UserController::class, 'show'])->name('admin.users.show');
-    //     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
-    //     Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
-    //     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+//     // User Management
+//     Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');
+//     Route::get('/users/{user}', [UserController::class, 'show'])->name('admin.users.show');
+//     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
+//     Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+//     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
 
-    //     // Job Management
-    //     Route::get('/jobs', [JobController::class, 'adminIndex'])->name('admin.jobs.index');
-    //     Route::get('/jobs/{job}', [JobController::class, 'adminShow'])->name('admin.jobs.show');
-    //     Route::delete('/jobs/{job}', [JobController::class, 'adminDestroy'])->name('admin.jobs.destroy');
-    // });
+//     // Job Management
+//     Route::get('/jobs', [JobController::class, 'adminIndex'])->name('admin.jobs.index');
+//     Route::get('/jobs/{job}', [JobController::class, 'adminShow'])->name('admin.jobs.show');
+//     Route::delete('/jobs/{job}', [JobController::class, 'adminDestroy'])->name('admin.jobs.destroy');
+// });
 
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -86,7 +110,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
     Route::get('/jobs', [AdminController::class, 'jobs'])->name('jobs');
 
-     Route::get('/jobs/{job}/edit', [AdminController::class, 'editJob'])->name('jobs.edit');
+    Route::get('/jobs/{job}/edit', [AdminController::class, 'editJob'])->name('jobs.edit');
 
     Route::put('/jobs/{job}', [AdminController::class, 'updateJob'])->name('jobs.update');
     Route::put('/jobs/{job}/status', [AdminController::class, 'updateJobStatus'])->name('jobs.update.status');

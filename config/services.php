@@ -34,5 +34,14 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'ceca' => [
+        'key_encryption' => env('CECA_KEY_ENCRYPTION'),
+        'merchant_id' => env('CECA_MERCHANT_ID'),
+        'acquirer_bin' => env('CECA_ACQUIRER_BIN'),
+        'terminal_id' => env('CECA_TERMINAL_ID'),
+        'test_mode' => env('CECA_TEST_MODE', true),
+        'test_url' => 'https://tpv.ceca.es/tpvweb/tpv/compra.action',
+        'live_url' => 'https://pgw.ceca.es/tpvweb/tpv/compra.action',
+    ],
 
 ];
