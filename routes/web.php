@@ -35,8 +35,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Job Management Routes (for clients)
-    Route::middleware(['role:user'])->group(function () {
-        Route::get('/jobs/create', [JobController::class, 'create'])->name('jobs.create');
+   Route::middleware(['role:user'])->group(function () {
+        Route::get('/jobs-create', [JobController::class, 'create'])->name('jobs.create');
         Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
         Route::get('/jobs/{job}/edit', [JobController::class, 'edit'])->name('jobs.edit');
         Route::put('/jobs/{job}', [JobController::class, 'update'])->name('jobs.update');
