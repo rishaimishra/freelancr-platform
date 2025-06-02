@@ -6,5 +6,32 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
-    //
+    protected $fillable = [
+        'job_id',
+        'sender_id',
+        'receiver_id',
+        'message',
+        'is_read'
+    ];
+    public $timestamps = false;
+
+    protected $casts = [
+        'is_read' => 'boolean',
+        'sent_at' => 'datetime', 
+    ];
+
+    public function job()
+    {
+        return $this->belongsTo(Job::class);
+    }
+
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'receiver_id');
+    }
 }

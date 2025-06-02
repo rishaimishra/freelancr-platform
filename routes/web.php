@@ -55,13 +55,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/jobs/{job}/apply', [JobController::class, 'apply'])->name('jobs.apply');
       
     });
-      Route::get('/messages/list', [PusherBroadcastController::class, 'index'])->name('messages.index');
-        Route::post('/message/broadcast', [PusherBroadcastController::class, 'broadcast'])->name('message.broadcast');
-        Route::post('/message/receive', [PusherBroadcastController::class, 'receive'])->name('message.receive');
 
-
-
-
+    // Chat Routes
+    Route::get('/messages/{job}', [PusherBroadcastController::class, 'index'])->name('messages.index');
+    Route::post('/messages/{job}/send', [PusherBroadcastController::class, 'broadcast'])->name('messages.broadcast');
+    Route::post('/messages/{job}/receive', [PusherBroadcastController::class, 'receive'])->name('messages.receive');
 });
 
 // Payment routes

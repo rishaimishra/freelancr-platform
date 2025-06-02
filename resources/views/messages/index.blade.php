@@ -1,91 +1,125 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>Chat Laravel Pusher | Edlin App</title>
-  <link rel="icon" href="https://assets.edlin.app/favicon/favicon.ico"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.master')
 
-  <!-- JavaScript -->
-  <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
-  <!-- End JavaScript -->
+@section('content')
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Job Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>{{ $job->title }}</h6>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-user me-2"></i>{{ $job->client->name }}
+                        </p>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="/styles.css">
-  <!-- End CSS -->
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-dollar-sign me-2"></i>{{ number_format($job->budget, 2) }}
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-</head>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Chat</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chat-messages" id="chatMessages" style="height: 400px; overflow-y: auto;">
+                            @foreach ($messages as $message)
+                                <div class="message {{ $message->sender_id === auth()->id() ? 'text-end' : '' }} mb-3">
+                                    <div
+                                        class="message-content d-inline-block p-2 rounded {{ $message->sender_id === auth()->id() ? 'bg-primary text-white' : 'bg-light' }}">
+                                        <small
+                                            class="d-block {{ $message->sender_id === auth()->id() ? 'text-white-50' : 'text-muted' }}">
+                                            {{ $message->sender->name }} -
+                                            {{ $message->sent_at->format('M d, Y H:i') }}
+                                        </small>
+                                        {{ $message->message }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
 
-<body>
-<div class="chat">
-
-  <!-- Header -->
-  <div class="top">
-    <img src="https://assets.edlin.app/images/rossedlin/03/rossedlin-03-100.jpg" alt="Avatar">
-    <div>
-      <p>Ross Edlin</p>
-      <small>Online</small>
+                        <div class="chat-input mt-3">
+                            <form id="chatForm" class="d-flex">
+                                <input type="text" class="form-control me-2" placeholder="Type your message..."
+                                    id="messageInput">
+                                <button type="submit" class="btn btn-primary">Send</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <!-- End Header -->
 
-  <!-- Chat -->
-  <div class="messages">
-    @include('messages.receive', ['message' => "Hey! What's up!  👋"])
-    @include('messages.receive', ['message' => "Ask a friend to open this link and you can chat with them!"])
-  </div>
-  <!-- End Chat -->
+    @push('scripts')
+        <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialize Pusher
+                const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
+                    cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}'
+                });
 
-  <!-- Footer -->
-  <div class="bottom">
-    <form>
-      <input type="text" id="message" name="message" placeholder="Enter message..." autocomplete="off">
-      <button type="submit"></button>
-    </form>
-  </div>
-  <!-- End Footer -->
+                // Subscribe to private channel
+                const channel = pusher.subscribe('private-job.{{ $job->id }}');
 
-</div>
-</body>
+                channel.bind('NewMessage', function(data) {
+                    appendMessage(data.message);
+                });
 
-<script>
-  const pusher  = new Pusher('{{config('broadcasting.connections.pusher.key')}}', {cluster: 'ap2'});
-  const channel = pusher.subscribe('public');
+                // Handle message submission
+                $('#chatForm').on('submit', function(e) {
+                    e.preventDefault();
+                    const input = $('#messageInput');
+                    const message = input.val().trim();
 
-  //Receive messages
-  channel.bind('chat', function (data) {
-    $.post("/message/receive", {
-      _token:  '{{csrf_token()}}',
-      message: data.message,
-    })
-     .done(function (res) {
-       $(".messages > .message").last().after(res);
-       $(document).scrollTop($(document).height());
-     });
-  });
+                    if (message) {
+                        sendMessage(message);
+                        input.val('');
+                    }
+                });
 
-  //Broadcast messages
-  $("form").submit(function (event) {
-    event.preventDefault();
+                // Scroll to bottom of messages
+                const messagesContainer = $('#chatMessages');
+                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+            });
 
-    $.ajax({
-      url:     "/message/broadcast",
-      method:  'POST',
-      headers: {
-        'X-Socket-Id': pusher.connection.socket_id,
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-      },
-      data:    {
-        _token:  '{{csrf_token()}}',
-        message: $("form #message").val(),
-      }
-    }).done(function (res) {
-      $(".messages > .message").last().after(res);
-      $("form #message").val('');
-      $(document).scrollTop($(document).height());
-    });
-  });
+            function appendMessage(message) {
+                const isCurrentUser = message.sender_id === {{ auth()->id() }};
+                const messageHtml = `
+        <div class="message ${isCurrentUser ? 'text-end' : ''} mb-3">
+            <div class="message-content d-inline-block p-2 rounded ${isCurrentUser ? 'bg-primary text-white' : 'bg-light'}">
+                <small class="d-block ${isCurrentUser ? 'text-white-50' : 'text-muted'}">
+                    ${message.sender.name} - ${new Date(message.created_at).toLocaleString()}
+                </small>
+                ${message.message}
+            </div>
+        </div>
+    `;
 
-</script>
-</html>
+                $('#chatMessages').append(messageHtml);
+                $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+            }
+
+            function sendMessage(message) {
+                $.ajax({
+                    url: '{{ route('messages.broadcast', $job) }}',
+                    method: 'POST',
+                    data: {
+                        message: message,
+                        receiver_id: {{ auth()->user()->user_type === 'user' ? $job->contractor_id : $job->client_id }},
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        appendMessage(response.message);
+                    }
+                });
+            }
+        </script>
+    @endpush
+@endsection

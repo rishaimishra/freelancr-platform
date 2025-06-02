@@ -14,8 +14,9 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('job_id')->constrained('jobs')->onDelete('cascade');
+            $table->foreignId('job_id')->constrained('created_jobs')->onDelete('cascade');
             $table->text('message');
+            $table->boolean('is_read');
             $table->timestamp('sent_at')->useCurrent();
 
         });
